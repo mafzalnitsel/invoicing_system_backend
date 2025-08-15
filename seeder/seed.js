@@ -7,7 +7,7 @@ import { loginToSAP } from "./loginToSAP.js";
 
 configDotenv();
 
-// ===== Import all models =====
+// ===== Import Models =====
 import Customer from "../models/Customer.js";
 import ContactPerson from "../models/ContactPerson.js";
 import Branch from "../models/Branch.js";
@@ -20,77 +20,7 @@ import CostCentre from "../models/CostCentre.js";
 import ChartOfAccount from "../models/ChartOfAccount.js";
 import Invoice from "../models/Invoice.js";
 
-// ===== API mapping =====
-const collections = [
-  {
-    name: "Customer",
-    model: Customer,
-    endpoint: "/BusinessPartners",
-    keyField: "CardCode",
-  },
-  {
-    name: "ContactPerson",
-    model: ContactPerson,
-    endpoint: "/BusinessPartners",
-    keyField: "InternalCode", // adjust based on your schema
-  },
-  {
-    name: "Branch",
-    model: Branch,
-    endpoint: "/BusinessPlaces",
-    keyField: "BPLId",
-  },
-  {
-    name: "SalesEmployee",
-    model: SalesEmployee,
-    endpoint: "/SalesPersons",
-    keyField: "SalesEmployeeCode",
-  },
-  {
-    name: "Owner",
-    model: Owner,
-    endpoint: "/EmployeesInfo",
-    keyField: "EmployeeID",
-  },
-  {
-    name: "Item",
-    model: Item,
-    endpoint:
-      "/Items?$select=ItemCode,ItemName,ItemWarehouseInfoCollection,SalesUnit,PurchaseUnit,InventoryUOM",
-    keyField: "ItemCode",
-  },
-  {
-    name: "Tax",
-    model: Tax,
-    endpoint: "/VatGroups",
-    keyField: "Code",
-  },
-  {
-    name: "Warehouse",
-    model: Warehouse,
-    endpoint: "/Warehouses",
-    keyField: "WarehouseCode",
-  },
-  {
-    name: "CostCentre",
-    model: CostCentre,
-    endpoint: "/ProfitCenters",
-    keyField: "CenterCode",
-  },
-  {
-    name: "ChartOfAccount",
-    model: ChartOfAccount,
-    endpoint: "/ChartOfAccounts",
-    keyField: "Code",
-  },
-  // {
-  //   name: "Invoice",
-  //   model: Invoice,
-  //   endpoint: "/Invoices",
-  //   keyField: "DocEntry",
-  // },
-];
-
+// ===== Helper: Fetch from SAP =====
 async function fetchFromSAP(sessionId, endpoint) {
   const res = await fetch(`${process.env.SAP_URI}${endpoint}`, {
     headers: {
@@ -109,29 +39,163 @@ async function fetchFromSAP(sessionId, endpoint) {
   return data.value || [];
 }
 
+// ===== Seeding Functions =====
+async function seedCustomers(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/BusinessPartners?$top=3");
+  for (const record of data) {
+    // Here you can transform record before saving
+    await Customer.findOneAndUpdate({ CardCode: record.CardCode }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Customers inserted/updated successfully.");
+}
+
+async function seedContactPersons(sessionId) {
+  const data = await fetchFromSAP(
+    sessionId,
+    "/BusinessPartners?$select=ContactEmployees&$top=3"
+  );
+  // Map ContactEmployees if necessary
+  for (const bp of data) {
+    if (bp.ContactEmployees) {
+      for (const contact of bp.ContactEmployees) {
+        await ContactPerson.findOneAndUpdate(
+          { InternalCode: contact.InternalCode },
+          contact,
+          { upsert: true, new: true }
+        );
+      }
+    }
+  }
+  console.log("Contact Persons inserted/updated successfully.");
+}
+
+async function seedBranches(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/BusinessPlaces?$top=3");
+  for (const record of data) {
+    await Branch.findOneAndUpdate({ BPLID: record.BPLID }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Branches inserted/updated successfully.");
+}
+
+async function seedSalesEmployees(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/SalesPersons?$top=3");
+  for (const record of data) {
+    await SalesEmployee.findOneAndUpdate(
+      { SalesEmployeeCode: record.SalesEmployeeCode },
+      record,
+      { upsert: true, new: true }
+    );
+  }
+  console.log("Sales Employees inserted/updated successfully.");
+}
+
+async function seedOwners(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/EmployeesInfo?$top=3");
+  for (const record of data) {
+    await Owner.findOneAndUpdate({ EmployeeID: record.EmployeeID }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Owners inserted/updated successfully.");
+}
+
+async function seedItems(sessionId) {
+  const data = await fetchFromSAP(
+    sessionId,
+    "/Items?$top=3&$select=ItemCode,ItemName,ItemWarehouseInfoCollection,SalesUnit,PurchaseUnit,InventoryUOM"
+  );
+  for (const record of data) {
+    await Item.findOneAndUpdate({ ItemCode: record.ItemCode }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Items inserted/updated successfully.");
+}
+
+async function seedTaxes(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/VatGroups?$top=3");
+  for (const record of data) {
+    await Tax.findOneAndUpdate({ Code: record.Code }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Taxes inserted/updated successfully.");
+}
+
+async function seedWarehouses(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/Warehouses?$top=3");
+  for (const record of data) {
+    await Warehouse.findOneAndUpdate(
+      { WarehouseCode: record.WarehouseCode },
+      record,
+      { upsert: true, new: true }
+    );
+  }
+  console.log("Warehouses inserted/updated successfully.");
+}
+
+async function seedCostCentres(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/ProfitCenters?$top=3");
+  for (const record of data) {
+    await CostCentre.findOneAndUpdate(
+      { CenterCode: record.CenterCode },
+      record,
+      { upsert: true, new: true }
+    );
+  }
+  console.log("Cost Centres inserted/updated successfully.");
+}
+
+async function seedChartOfAccounts(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/ChartOfAccounts?$top=3");
+  for (const record of data) {
+    await ChartOfAccount.findOneAndUpdate({ Code: record.Code }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Chart of Accounts inserted/updated successfully.");
+}
+
+async function seedInvoices(sessionId) {
+  const data = await fetchFromSAP(sessionId, "/Invoices?$top=3");
+  for (const record of data) {
+    await Invoice.findOneAndUpdate({ DocEntry: record.DocEntry }, record, {
+      upsert: true,
+      new: true,
+    });
+  }
+  console.log("Invoices inserted/updated successfully.");
+}
+
+// ===== Main Seeder =====
 async function seed() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-
     console.log("Logging into SAP...");
     const sessionId = await loginToSAP();
     console.log("SAP login successful.");
 
-    for (const col of collections) {
-      console.log(`Fetching ${col.name}...`);
-      const data = await fetchFromSAP(sessionId, col.endpoint);
-      console.log(`Fetched ${data.length} ${col.name} record(s).`);
-
-      for (const record of data) {
-        await col.model.findOneAndUpdate(
-          { [col.keyField]: record[col.keyField] },
-          record,
-          { upsert: true, new: true }
-        );
-      }
-
-      console.log(`${col.name} inserted/updated successfully.`);
-    }
+    // await seedCustomers(sessionId);
+    await seedContactPersons(sessionId);
+    // await seedBranches(sessionId);
+    // await seedSalesEmployees(sessionId);
+    // await seedOwners(sessionId);
+    // await seedItems(sessionId);
+    // await seedTaxes(sessionId);
+    // await seedWarehouses(sessionId);
+    // await seedCostCentres(sessionId);
+    // await seedChartOfAccounts(sessionId);
+    // await seedInvoices(sessionId);
 
     console.log("All collections seeded successfully.");
     process.exit(0);

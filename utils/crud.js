@@ -18,18 +18,50 @@ export function generateCRUD(Model) {
     // READ ALL (with optional pagination)
     async readAll(req, res) {
       try {
-        let { page, per_page, ...filters } = req.query;
+        let { page, per_page, select, ...filters } = req.query;
         page = parseInt(page, 10) || null;
         per_page = parseInt(per_page, 10) || null;
 
-        let query = Model.find(filters);
+        // Validate and parse select fields
+        let projection = null;
+        if (select) {
+          const requestedFields = select
+            .split(",")
+            .map((f) => f.trim())
+            .filter(Boolean);
+
+          // Allowed fields from schema
+          const allowedFields = Object.keys(Model.schema.paths);
+          const invalidFields = requestedFields.filter(
+            (f) => !allowedFields.includes(f)
+          );
+
+          if (invalidFields.length > 0) {
+            return res.status(400).json({
+              message: `Invalid select field(s): ${invalidFields.join(", ")}`,
+              allowedFields,
+            });
+          }
+
+          projection = requestedFields.join(" "); // mongoose projection format
+        }
+
+        let query = Model.find(filters, projection);
 
         if (page && per_page) {
           const skip = (page - 1) * per_page;
-          const total = await Model.countDocuments(filters);
-          const totalPages = Math.ceil(total / per_page);
+          let total = await Model.countDocuments(filters);
 
+          // If no results found with filters → fallback to all
+          if (total === 0) {
+            filters = {};
+            query = Model.find({}, projection);
+            total = await Model.countDocuments({});
+          }
+
+          const totalPages = Math.ceil(total / per_page);
           const docs = await query.skip(skip).limit(per_page).exec();
+
           return res.json({
             data: docs,
             pagination: {
@@ -41,7 +73,12 @@ export function generateCRUD(Model) {
           });
         }
 
-        const docs = await query.exec();
+        // Non-paginated
+        let docs = await query.exec();
+        if (docs.length === 0) {
+          docs = await Model.find({}, projection).exec();
+        }
+
         res.json(docs);
       } catch (error) {
         console.error("ReadAll error:", error);
@@ -51,7 +88,6 @@ export function generateCRUD(Model) {
         });
       }
     },
-
     // READ ONE
     async readOne(req, res) {
       try {
