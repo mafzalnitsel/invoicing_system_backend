@@ -23,3 +23,5 @@ if (missingEnvVars.length > 0) {
     console.log(`🚀 Server running on port ${PORT}`);
   });
 })();
+
+export default app;
