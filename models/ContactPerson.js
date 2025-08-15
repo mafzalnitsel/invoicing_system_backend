@@ -1,0 +1,46 @@
+import { Schema, model } from "mongoose";
+
+const ContactPersonSchema = new Schema(
+  {
+    CardCode: { type: String, required: true },
+    Name: { type: String, required: true },
+    Position: String,
+    Address: String,
+    Phone1: String,
+    Phone2: String,
+    MobilePhone: String,
+    Fax: String,
+    E_Mail: String,
+    Pager: String,
+    Remarks1: String,
+    Remarks2: String,
+    Password: String,
+    InternalCode: Number,
+    PlaceOfBirth: String,
+    DateOfBirth: Date,
+    Gender: String,
+    Profession: String,
+    Title: String,
+    CityOfBirth: String,
+    Active: String,
+    FirstName: String,
+    MiddleName: String,
+    LastName: String,
+    EmailGroupCode: String,
+    BlockSendingMarketingContent: String,
+    CreateDate: Date,
+    CreateTime: String,
+    UpdateDate: Date,
+    UpdateTime: String,
+    ConnectedAddressName: String,
+    ConnectedAddressType: String,
+    ForeignCountry: String,
+    U_SendWA: String,
+    U_SendSMS: String,
+    U_SendEmail: String,
+    ContactEmployeeBlockSendingMarketingContents: [Schema.Types.Mixed],
+  },
+  { timestamps: true }
+);
+
+export default model("ContactPerson", ContactPersonSchema);

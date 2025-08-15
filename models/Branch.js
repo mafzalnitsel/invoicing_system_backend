@@ -1,0 +1,62 @@
+import { Schema, model } from "mongoose";
+
+const BranchSchema = new Schema(
+  {
+    BPLID: { type: Number, required: true },
+    BPLName: { type: String, required: true },
+    BPLNameForeign: String,
+    VATRegNum: String,
+    RepName: String,
+    Industry: String,
+    Business: String,
+    Address: String,
+    Addressforeign: String,
+    MainBPL: String,
+    TaxOfficeNo: String,
+    Disabled: String,
+    DefaultCustomerID: String,
+    DefaultVendorID: String,
+    DefaultWarehouseID: String,
+    DefaultTaxCode: String,
+    TaxOffice: String,
+    FederalTaxID: String,
+    FederalTaxID2: String,
+    FederalTaxID3: String,
+    AdditionalIdNumber: String,
+    NatureOfCompanyCode: Number,
+    EconomicActivityTypeCode: Number,
+    CreditContributionOriginCode: String,
+    IPIPeriodCode: String,
+    CooperativeAssociationTypeCode: Number,
+    ProfitTaxationCode: Number,
+    CompanyQualificationCode: Number,
+    DeclarerTypeCode: Number,
+    PreferredStateCode: String,
+    AddressType: String,
+    Street: String,
+    StreetNo: String,
+    Building: String,
+    ZipCode: String,
+    Block: String,
+    City: String,
+    State: String,
+    County: String,
+    Country: String,
+    AliasName: String,
+    CommercialRegister: String,
+    DateOfIncorporation: Date,
+    SPEDProfile: String,
+    EnvironmentType: Number,
+    Opting4ICMS: String,
+    PaymentClearingAccount: String,
+    GlobalLocationNumber: String,
+    DefaultResourceWarehouseID: String,
+
+    // Arrays
+    BusinessPlaceIENumbers: [Schema.Types.Mixed],
+    BusinessPlaceTributaryInfos: [Schema.Types.Mixed]
+  },
+  { timestamps: true }
+);
+
+export default model("Branch", BranchSchema);
