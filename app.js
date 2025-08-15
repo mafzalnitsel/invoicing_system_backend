@@ -24,7 +24,7 @@ app.use(hpp());
 app.use(compression());
 
 // Cache
-app.use("/api", cacheMiddleware);
+// app.use("/api", cacheMiddleware);
 
 // Routes
 app.use("/api", routes);

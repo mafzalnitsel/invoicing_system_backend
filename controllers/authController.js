@@ -1,7 +1,6 @@
 import bcryptjs from "bcryptjs";
 import jsonwebtoken from "jsonwebtoken";
 import User from "../models/User.js";
-const { findOne, create, findById } = User;
 const { hash, compare } = bcryptjs;
 const { sign, verify } = jsonwebtoken;
 
@@ -20,13 +19,13 @@ export async function register(req, res) {
       return res.status(400).json({ message: "All fields are required" });
     }
 
-    const existingUser = await findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "Email already registered" });
     }
 
     const hashedPassword = await hash(password, 10);
-    const user = await create({ name, email, password: hashedPassword });
+    const user = await User.create({ name, email, password: hashedPassword });
 
     res.status(201).json({
       message: "User registered successfully",
@@ -48,7 +47,7 @@ export async function login(req, res) {
         .json({ message: "Email and password are required" });
     }
 
-    const user = await findOne({ email });
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Invalid email or password" });
     }
@@ -81,7 +80,7 @@ export async function getProfile(req, res) {
     const token = authHeader.split(" ")[1];
     const decoded = verify(token, process.env.JWT_SECRET);
 
-    const user = await findById(decoded.id).select("-password");
+    const user = await User.findById(decoded.id).select("-password");
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
