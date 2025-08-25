@@ -39,17 +39,69 @@ async function fetchFromSAP(sessionId, endpoint) {
   return data.value || [];
 }
 
-// ===== Seeding Functions =====
-async function seedCustomers(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/BusinessPartners?$top=3");
+// ===== Generic Seeder =====
+async function genericSeeder(sessionId, name, endpoint, uniqueField, Model) {
+  const data = await fetchFromSAP(sessionId, endpoint);
+  console.log(
+    `Fetched from SAP: ${data.length} ${name}(s). Now seeding ${name} to MongoDB...`
+  );
+
   for (const record of data) {
-    // Here you can transform record before saving
-    await Customer.findOneAndUpdate({ CardCode: record.CardCode }, record, {
-      upsert: true,
-      new: true,
-    });
+    await Model.findOneAndUpdate(
+      { [uniqueField]: record[uniqueField] },
+      record,
+      {
+        upsert: true,
+        new: true,
+      }
+    );
+    console.log(`${name} ${record[uniqueField]} inserted/updated.`);
   }
-  console.log("Customers inserted/updated successfully.");
+  console.log(`${name} inserted/updated successfully.`);
+}
+
+// ===== Special Seeder for Items (optimized) =====
+async function seedItems(sessionId) {
+  const batchSize = 1; // Fetch one at a time to avoid huge payload
+  let skip = 0;
+  let totalSeeded = 0;
+
+  while (true) {
+    const data = await fetchFromSAP(
+      sessionId,
+      `/Items?$skip=${skip}&$top=${batchSize}&$select=ItemCode,ItemName,ItemWarehouseInfoCollection,SalesUnit,PurchaseUnit,InventoryUOM`
+    );
+
+    if (!data.length) break;
+
+    console.log(
+      `Fetched from SAP: ${data.length} Item(s). Now seeding Items to MongoDB...`
+    );
+
+    for (const record of data) {
+      await Item.findOneAndUpdate({ ItemCode: record.ItemCode }, record, {
+        upsert: true,
+        new: true,
+      });
+      console.log(`Item ${record.ItemCode} inserted/updated.`);
+      totalSeeded++;
+    }
+
+    skip += batchSize;
+  }
+
+  console.log(`Total Items seeded: ${totalSeeded}`);
+}
+
+// ===== Seeder Functions =====
+async function seedCustomers(sessionId) {
+  await genericSeeder(
+    sessionId,
+    "Customer",
+    "/BusinessPartners?$top=3",
+    "CardCode",
+    Customer
+  );
 }
 
 async function seedContactPersons(sessionId) {
@@ -57,7 +109,10 @@ async function seedContactPersons(sessionId) {
     sessionId,
     "/BusinessPartners?$select=ContactEmployees&$top=3"
   );
-  // Map ContactEmployees if necessary
+  console.log(
+    `Fetched from SAP: ${data.length} BusinessPartner(s). Now seeding Contact Persons to MongoDB...`
+  );
+
   for (const bp of data) {
     if (bp.ContactEmployees) {
       for (const contact of bp.ContactEmployees) {
@@ -66,6 +121,7 @@ async function seedContactPersons(sessionId) {
           contact,
           { upsert: true, new: true }
         );
+        console.log(`Contact Person ${contact.InternalCode} inserted/updated.`);
       }
     }
   }
@@ -73,108 +129,77 @@ async function seedContactPersons(sessionId) {
 }
 
 async function seedBranches(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/BusinessPlaces?$top=3");
-  for (const record of data) {
-    await Branch.findOneAndUpdate({ BPLID: record.BPLID }, record, {
-      upsert: true,
-      new: true,
-    });
-  }
-  console.log("Branches inserted/updated successfully.");
+  await genericSeeder(
+    sessionId,
+    "Branch",
+    "/BusinessPlaces?$top=3",
+    "BPLID",
+    Branch
+  );
 }
 
 async function seedSalesEmployees(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/SalesPersons?$top=3");
-  for (const record of data) {
-    await SalesEmployee.findOneAndUpdate(
-      { SalesEmployeeCode: record.SalesEmployeeCode },
-      record,
-      { upsert: true, new: true }
-    );
-  }
-  console.log("Sales Employees inserted/updated successfully.");
+  await genericSeeder(
+    sessionId,
+    "Sales Employee",
+    "/SalesPersons?$top=3",
+    "SalesEmployeeCode",
+    SalesEmployee
+  );
 }
 
 async function seedOwners(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/EmployeesInfo?$top=3");
-  for (const record of data) {
-    await Owner.findOneAndUpdate({ EmployeeID: record.EmployeeID }, record, {
-      upsert: true,
-      new: true,
-    });
-  }
-  console.log("Owners inserted/updated successfully.");
-}
-
-async function seedItems(sessionId) {
-  const data = await fetchFromSAP(
+  await genericSeeder(
     sessionId,
-    "/Items?$top=3&$select=ItemCode,ItemName,ItemWarehouseInfoCollection,SalesUnit,PurchaseUnit,InventoryUOM"
+    "Owner",
+    "/EmployeesInfo",
+    "EmployeeID",
+    Owner
   );
-  for (const record of data) {
-    await Item.findOneAndUpdate({ ItemCode: record.ItemCode }, record, {
-      upsert: true,
-      new: true,
-    });
-  }
-  console.log("Items inserted/updated successfully.");
 }
 
 async function seedTaxes(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/VatGroups?$top=3");
-  for (const record of data) {
-    await Tax.findOneAndUpdate({ Code: record.Code }, record, {
-      upsert: true,
-      new: true,
-    });
-  }
-  console.log("Taxes inserted/updated successfully.");
+  await genericSeeder(sessionId, "Tax", "/VatGroups?$top=3", "Code", Tax);
 }
 
 async function seedWarehouses(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/Warehouses?$top=3");
-  for (const record of data) {
-    await Warehouse.findOneAndUpdate(
-      { WarehouseCode: record.WarehouseCode },
-      record,
-      { upsert: true, new: true }
-    );
-  }
-  console.log("Warehouses inserted/updated successfully.");
+  await genericSeeder(
+    sessionId,
+    "Warehouse",
+    "/Warehouses?$top=3",
+    "WarehouseCode",
+    Warehouse
+  );
 }
 
 async function seedCostCentres(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/ProfitCenters?$top=3");
-  for (const record of data) {
-    await CostCentre.findOneAndUpdate(
-      { CenterCode: record.CenterCode },
-      record,
-      { upsert: true, new: true }
-    );
-  }
-  console.log("Cost Centres inserted/updated successfully.");
+  await genericSeeder(
+    sessionId,
+    "Cost Centre",
+    "/ProfitCenters?$top=3",
+    "CenterCode",
+    CostCentre
+  );
 }
 
 async function seedChartOfAccounts(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/ChartOfAccounts?$top=3");
-  for (const record of data) {
-    await ChartOfAccount.findOneAndUpdate({ Code: record.Code }, record, {
-      upsert: true,
-      new: true,
-    });
-  }
-  console.log("Chart of Accounts inserted/updated successfully.");
+  await genericSeeder(
+    sessionId,
+    "Chart Of Account",
+    "/ChartOfAccounts?$top=3",
+    "Code",
+    ChartOfAccount
+  );
 }
 
 async function seedInvoices(sessionId) {
-  const data = await fetchFromSAP(sessionId, "/Invoices?$top=3");
-  for (const record of data) {
-    await Invoice.findOneAndUpdate({ DocEntry: record.DocEntry }, record, {
-      upsert: true,
-      new: true,
-    });
-  }
-  console.log("Invoices inserted/updated successfully.");
+  await genericSeeder(
+    sessionId,
+    "Invoice",
+    "/Invoices?$top=3",
+    "DocEntry",
+    Invoice
+  );
 }
 
 // ===== Main Seeder =====
@@ -185,12 +210,13 @@ async function seed() {
     const sessionId = await loginToSAP();
     console.log("SAP login successful.");
 
+    // ===== Choose which collections to seed =====
     // await seedCustomers(sessionId);
-    await seedContactPersons(sessionId);
+    // await seedContactPersons(sessionId);
     // await seedBranches(sessionId);
     // await seedSalesEmployees(sessionId);
     // await seedOwners(sessionId);
-    // await seedItems(sessionId);
+    // await seedItems(sessionId); // Optimized item seeding
     // await seedTaxes(sessionId);
     // await seedWarehouses(sessionId);
     // await seedCostCentres(sessionId);

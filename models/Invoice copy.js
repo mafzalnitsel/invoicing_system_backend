@@ -1,28 +1,28 @@
-import { Schema, model, Types } from "mongoose";
+import { Schema, model } from "mongoose";
 
-// Reusable SAP Boolean mapper (tYES / tNO ↔ true / false)
+// SAP Boolean mapping helper
 const sapBoolean = {
   type: Boolean,
   set: (v) => v === "tYES" || v === true,
   get: (v) => (v ? "tYES" : "tNO"),
 };
 
-// Document Line Schema (items inside the invoice)
+// Invoice Line Schema (Item Details)
 const InvoiceLineSchema = new Schema(
   {
     ItemCode: { type: String, required: true },
     ItemDescription: String,
     Quantity: Number,
     Price: Number,
-    DiscountPercent: Number,
+    DiscountPercent: Number, 
     LineTotal: Number,
-    WarehouseCode: { type: String, ref: "Warehouse" },
-    TaxCode: { type: String, ref: "Tax" },
-    AccountCode: { type: String, ref: "ChartOfAccount" },
-    CostingCode: { type: String, ref: "CostCentre" }, // Dimension 1
-    CostingCode2: { type: String, ref: "CostCentre" }, // Dimension 2
-    CostingCode3: { type: String, ref: "CostCentre" }, // Dimension 3
-    SalesPersonCode: { type: Number, ref: "SalesEmployee" },
+    WarehouseCode: String,
+    TaxCode: String,
+    AccountCode: String,
+    CostingCode: String, // Dimension 1
+    CostingCode2: String, // Dimension 2
+    CostingCode3: String, // Dimension 3
+    SalesPersonCode: Number,  
     BaseEntry: Number,
     BaseLine: Number,
     BaseType: Number,
@@ -35,13 +35,13 @@ const InvoiceSchema = new Schema(
   {
     DocEntry: { type: Number, required: true, unique: true },
     DocNum: Number,
-    DocType: String, // "dDocument_Items"
+    DocType: String,
     DocDate: Date,
     DocDueDate: Date,
-    CardCode: String, // BP Code
-    CardName: String, // BP Name
+    CardCode: String,
+    CardName: String,
     Address: String,
-    NumAtCard: String, // Customer Ref #
+    NumAtCard: String,
     VatPercent: Number,
     VatSum: Number,
     VatSumSys: Number,
@@ -54,18 +54,10 @@ const InvoiceSchema = new Schema(
     PaidToDateFC: Number,
     Comments: String,
 
-    // References
-    Branch: { type: Types.ObjectId, ref: "Branch" },
-    SalesPerson: { type: Types.ObjectId, ref: "SalesEmployee" },
-    ContactPerson: { type: Types.ObjectId, ref: "ContactPerson" },
-    Warehouse: { type: Types.ObjectId, ref: "Warehouse" },
-    CostCentre: { type: Types.ObjectId, ref: "CostCentre" },
-    Tax: { type: Types.ObjectId, ref: "Tax" },
-
-    // Document Status
+    // SAP Document Status
     Canceled: sapBoolean,
     Printed: sapBoolean,
-    DocStatus: String, // "O" (Open) or "C" (Closed)
+    DocStatus: String,
 
     // Currency & Rates
     DocCurrency: String,
@@ -80,8 +72,8 @@ const InvoiceSchema = new Schema(
       {
         ExpenseCode: Number,
         LineTotal: Number,
-        TaxCode: { type: String, ref: "Tax" },
-        AccountCode: { type: String, ref: "ChartOfAccount" },
+        TaxCode: String,
+        AccountCode: String,
       },
     ],
 

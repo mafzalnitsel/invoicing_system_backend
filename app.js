@@ -7,7 +7,7 @@ import hpp from "hpp";
 import compression from "compression";
 import dotenv from "dotenv";
 
-import cacheMiddleware from "./middlewares/cache.js";
+// import cacheMiddleware from "./middlewares/cache.js";
 import errorHandler from "./middlewares/errorHandler.js";
 import routes from "./routes/index.js";
 

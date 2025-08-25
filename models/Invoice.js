@@ -1,85 +1,89 @@
-import { Schema, model } from "mongoose";
+import mongoose from "mongoose";
 
-// SAP Boolean mapping helper
-const sapBoolean = {
-  type: Boolean,
-  set: (v) => v === "tYES" || v === true,
-  get: (v) => (v ? "tYES" : "tNO"),
-};
+const { Schema, model } = mongoose;
 
-// Invoice Line Schema (Item Details)
-const InvoiceLineSchema = new Schema(
+// Items inside request_body
+const ItemSchema = new Schema(
   {
-    ItemCode: { type: String, required: true },
-    ItemDescription: String,
-    Quantity: Number,
-    Price: Number,
-    DiscountPercent: Number,
-    LineTotal: Number,
-    WarehouseCode: String,
-    TaxCode: String,
-    AccountCode: String,
-    CostingCode: String, // Dimension 1
-    CostingCode2: String, // Dimension 2
-    CostingCode3: String, // Dimension 3
-    SalesPersonCode: Number,
-    BaseEntry: Number,
-    BaseLine: Number,
-    BaseType: Number,
+    hsCode: String,
+    productDescription: String,
+    rate: String,
+    uoM: String,
+    quantity: Number,
+    totalValues: Number,
+    valueSalesExcludingST: Number,
+    fixedNotifiedValueOrRetailPrice: Number,
+    salesTaxApplicable: Number,
+    salesTaxWithheldAtSource: Number,
+    extraTax: Number,
+    furtherTax: Number,
+    sroScheduleNo: String,
+    fedPayable: Number,
+    discount: Number,
+    saleType: String,
+    sroItemSerialNo: String,
   },
   { _id: false }
 );
 
-// Invoice Schema
+// Response nested schemas
+const InvoiceStatusSchema = new Schema(
+  {
+    itemSNo: String,
+    statusCode: String,
+    status: String,
+    invoiceNo: String,
+    errorCode: String,
+    error: String,
+  },
+  { _id: false }
+);
+
+const ValidationResponseSchema = new Schema(
+  {
+    statusCode: String,
+    status: String,
+    error: String,
+    invoiceStatuses: [InvoiceStatusSchema],
+  },
+  { _id: false }
+);
+
+const ResponseBodySchema = new Schema(
+  {
+    invoiceNumber: String,
+    dated: Date,
+    validationResponse: ValidationResponseSchema,
+  },
+  { _id: false }
+);
+
+// Request body schema
+const RequestBodySchema = new Schema(
+  {
+    invoiceType: String,
+    invoiceDate: Date,
+    sellerNTNCNIC: String,
+    sellerBusinessName: String,
+    sellerProvince: String,
+    sellerAddress: String,
+    buyerNTNCNIC: String,
+    buyerBusinessName: String,
+    buyerProvince: String,
+    buyerAddress: String,
+    buyerRegistrationType: String,
+    invoiceRefNo: String,
+    scenarioId: String,
+    items: [ItemSchema],
+  },
+  { _id: false }
+);
+
+// Main Invoice Schema
 const InvoiceSchema = new Schema(
   {
-    DocEntry: { type: Number, required: true, unique: true },
-    DocNum: Number,
-    DocType: String,
-    DocDate: Date,
-    DocDueDate: Date,
-    CardCode: String,
-    CardName: String,
-    Address: String,
-    NumAtCard: String,
-    VatPercent: Number,
-    VatSum: Number,
-    VatSumSys: Number,
-    VatSumFC: Number,
-    DocTotal: Number,
-    DocTotalSys: Number,
-    DocTotalFC: Number,
-    PaidToDate: Number,
-    PaidToDateSys: Number,
-    PaidToDateFC: Number,
-    Comments: String,
-
-    // SAP Document Status
-    Canceled: sapBoolean,
-    Printed: sapBoolean,
-    DocStatus: String,
-
-    // Currency & Rates
-    DocCurrency: String,
-    DocRate: Number,
-    DocTotalGross: Number,
-
-    // Lines
-    DocumentLines: [InvoiceLineSchema],
-
-    // Additional Expenses
-    DocumentAdditionalExpenses: [
-      {
-        ExpenseCode: Number,
-        LineTotal: Number,
-        TaxCode: String,
-        AccountCode: String,
-      },
-    ],
-
-    // Audit Fields
-    CreatedBy: Number,
-    UpdatedBy: Number,
+    request_body: RequestBodySchema,
+    response_body: ResponseBodySchema,
   },
   { timestamps: true }
 );

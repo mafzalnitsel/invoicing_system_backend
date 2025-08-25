@@ -1,0 +1,46 @@
+{
+  "request_body": {
+    "invoiceType": "Sale Invoice",
+    "invoiceDate": "2025-04-21",
+    "sellerNTNCNIC": "1234567890123",
+    "sellerBusinessName": "Company 8",
+    "sellerProvince": "Sindh",
+    "sellerAddress": "Karachi",
+    "buyerNTNCNIC": "9876543210123",
+    "buyerBusinessName": "FERTILIZER MANUFAC IRS NEW",
+    "buyerProvince": "Sindh",
+    "buyerAddress": "Karachi",
+    "buyerRegistrationType": "Registered",
+    "invoiceRefNo": "",
+    "scenarioId": "SN001",
+    "items": [
+      {
+        "hsCode": "0101.2100",
+        "productDescription": "product Description",
+        "rate": "18%",
+        "uoM": "Numbers, pieces, units",
+        "quantity": 1.0,
+        "totalValues": 0,
+        "valueSalesExcludingST": 1000,
+        "salesTaxApplicable": 180,
+        "furtherTax": 120
+      }
+    ]
+  },
+  "response_body": {
+    "invoiceNumber": "9685131DI1756123126524",
+    "dated": "2025-08-25T16:58:46Z",
+    "validationResponse": {
+      "statusCode": "00",
+      "status": "Valid",
+      "invoiceStatuses": [
+        {
+          "itemSNo": "1",
+          "statusCode": "00",
+          "status": "Valid",
+          "invoiceNo": "9685131DI1756123126524-1"
+        }
+      ]
+    }
+  }
+}

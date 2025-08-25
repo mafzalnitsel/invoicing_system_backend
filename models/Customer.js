@@ -142,7 +142,6 @@ const BPBankAccountSchema = new Schema(
 // Main Customer Schema
 const CustomerSchema = new Schema(
   {
-    "@odata.etag": String,
     CardCode: String,
     CardName: String,
     CardType: String,
